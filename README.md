@@ -22,8 +22,8 @@ Para instalar siga esses passos
 
 Para instalar as dependências do projeto, após fazer o clone do mesmo, abra a pasta que foi gerada e rode:
 
-````npm install``` com o npm, ou
-````yarn``` com o yarn se preferir.
+```npm install``` com o npm, ou
+```yarn``` com o yarn se preferir.
 
 Isso irá fazer surgir a pasta node_modules com todas as dependências do projeto instaladas.
 
