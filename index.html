@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediaPlayer</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap');
+    .video{
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .image{
+      display: flex;
+      position: relative;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      margin: 10px;
+    }
+    .play{
+      position: absolute;
+      display: none;
+      transition: all .2s linear;
+      z-index: 5;
+      cursor: pointer;
+      width: 55px;
+      height: 55px;
+    }
+
+    .play:active{
+      width: 56px;
+      height: 56px;
+    }
+
+    .play:hover{
+      display: flex;
+    }
+
+    .hide{
+      display: none;
+    }
+
+    .progress{
+      height: 4px;
+      background: #ddd;
+      width: 98%;
+      position: absolute;
+      bottom: 1px;
+      margin: 5px;
+      display: flex;
+    }
+
+    .progressCicle{
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f00;
+      position: absolute;
+      right: 0;
+    }
+
+    .progressValue{
+      height: 100%;
+      width: 14.50%;
+      background: #f00;
+      position: relative;
+      align-items: center;
+      display: flex;
+    }
+
+    .prev{
+      width: 250px;
+      height: 160px;
+      cursor: pointer;
+    }
+
+    .prev:hover ~ .play{
+      display: flex;
+    }
+
+    .preview{
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+    }
+
+    .hide{
+      display: none;
+    }
+
+    #name{
+      color:#e8e8ff;
+      font-size: 16pt;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    .name{
+      color:#e8e8ff;
+      font-family: Roboto, Arial, sans-serif;
+    }
+    .player{
+      position: relative;
+    }
+
+    body, html{
+      background: #282a36;
+      display: flex;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    .salt{
+      position: absolute;
+      background: rgba(66,66,66,2);
+      border-radius: 5px;
+      padding: 5px 8px;
+      color: #fff;
+      font-family: Roboto, Arial, sans-serif;
+      right: 35px;
+      bottom: 75px;
+      z-index: 9999;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      display: none;
+    }
+    .salt:hover{
+      color: #999;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="player">
+    <div class="salt"></div>
+    <video width="450" height="320"  controls>
+      <source type="video/mp4">
+    </video>
+  </div>
+  
+  <div class="name" id="name"></div>
+
+  <div class="videos">
+  </div>
+</body>
+
+<script>
+  const getList = require('./getLists.js');
+  const video = document.querySelector('video');
+  const src = '../../../../DOWNLOADS/Dragon Ball [Episódio 01 ao 75]/';
+
+  getList().then(resp =>{
+    const name = localStorage.getItem('current-name') || resp[0];
+    renderName(name);
+    
+    video.src = `${src}${name}`;
+    const poster = './assets/poster.jpg'
+    video.poster = poster;
+    const videoLocal = document.querySelector('.videos');
+    window.list = resp.filter(vid => vid.match(/(\.mkv)|(\.mp4)/));
+
+    resp.filter(vid => vid.match(/(\.mkv)|(\.mp4)/)).forEach((videoName, index) => {
+      const videoTag = document.createElement('img');
+      const image = document.createElement('div');
+      const preview = document.createElement('div');
+      const play = document.createElement('img');
+      const name = document.createElement('div');
+      const progress = document.createElement('div');
+      const progressValue = document.createElement('div');
+      const progressCicle = document.createElement('div');
+
+      play.setAttribute('src', './assets/play.png');
+      play.classList.add('play');
+      videoTag.setAttribute('src', poster);
+      videoTag.classList.add('prev');
+      preview.classList.add('preview');
+      image.classList.add('image');
+      videoLocal.appendChild(preview);
+      name.classList.add('name');
+      progress.classList.add('progress');
+      progressValue.classList.add('progressValue');
+      progressCicle.classList.add('progressCicle');
+      name.innerText = videoName.replace(/(\.mkv)|(.mp4)/, '');
+      preview.appendChild(image);
+      image.appendChild(videoTag);
+      image.appendChild(play);
+      image.appendChild(progress);
+      preview.appendChild(name)
+      progress.appendChild(progressValue); 
+      progressValue.appendChild(progressCicle); 
+      progressValue.style.width = getPercentageView(videoName);
+      const vid = document.createElement('video');
+      vid.src = `${src}${videoName}`;
+      vid.classList.add('hide');
+      videoLocal.appendChild(vid);
+      image.onclick = () => {
+        selectVideo(videoName, video, index);
+      }
+      vid.onloadeddata = ()=> {
+        saveDefaultValues(videoName, vid.duration);
+      }
+     });
+  });
+
+  function selectVideo(name, video, index){
+    window.scrollTo({ top: 0, behavior: 'smooth'});
+    updateProgress();
+    localStorage.setItem('index', index);
+    video.src = `${src}${name}`;
+    video.currentTime = localStorage.getItem(`current-time-${name}`);
+    video.onloadedmetadata = ()=> {
+      renderName(name);
+      video.play();
+    }
+  }
+
+  function renderName(name){
+    const nameLocal = document.querySelector('#name');
+    nameLocal.innerHTML = name.replace(/(\.mkv)|(.mp4)/, '');
+  }
+
+  const OPENING = 106.293457;
+
+  video.addEventListener('pause', ()=> {
+    dataSave(localStorage.getItem('index') || 0);
+    updateProgress();
+  });
+
+  function getName(){
+    const parts = video.currentSrc.split('/');
+    const name = parts[parts.length - 1];
+    return decodeURIComponent(name);
+  }
+
+  function skipOpening(){
+    video.currentTime = OPENING;
+    video.play();
+  }
+
+  function getPercentageView(name){
+    const duration = Number(localStorage.getItem(name) || 0);
+    const time = Number(localStorage.getItem(`current-time-${name}`) || 0);
+    const percent = getPercentage(duration, time)
+    const percentage =  percent > 0 ? `${percent}%` : '9px';
+    return percentage;
+  }
+
+  function getPercentageSelectedVideo(){
+    const duration = video.duration;
+    const time = video.currentTime;
+    const percent = getPercentage(duration, time)
+    const percentage =  percent > 0 ? `${percent}%` : '9px';
+    localStorage.setItem(`current-percentage-view-${getName()}`, percentage);
+    return percentage;
+  }
+
+  function saveDefaultValues(name, duration){
+    if(!localStorage.getItem(name)){
+      localStorage.setItem(name, duration);
+      localStorage.setItem(`current-time-${name}`, 0);
+      localStorage.setItem(`current-percentage-view-${name}`, '9px');
+      localStorage.setItem('current-name', name);
+      localStorage.setItem('index', 0);
+    }
+  }
+
+  function nextEpisode(){
+    const index = Number(localStorage.getItem('index') || 0);
+    const name = window.list[index + 1];
+    renderName(name);
+    localStorage.setItem('index', index + 1);
+    video.src = `${src}${name}`;
+    video.currentTime = localStorage.getItem(`current-time-${name}`)
+    video.onloadeddata = ()=> video.play();
+    window.scrollTo({ top: 0, behavior: 'smooth'});
+  }
+
+  const getPercentage = (total, value) => (((100 * value) / total) || 0).toFixed(2);
+
+
+  function keyOptions(option){
+    const options = {
+      ArrowLeft(){
+        if(video.currentTime >= 10) video.currentTime -= 10;
+      },
+      ArrowRight(){
+        if(video.currentTime <= video.duration - 10) video.currentTime += 10;
+      },
+      ArrowUp(){
+        if(video.muted) video.muted = false;
+        if(video.volume < 1) video.volume += .1;
+      },
+      ArrowDown(){
+        if(video.volume > 0.1) video.volume -= .1; 
+        else video.muted = true;
+      },
+      Default(){
+
+      }
+    }
+
+    return options[option] || options.Default;
+  }
+
+
+  video.addEventListener('keydown', (k)=> {
+    const { key } = k;
+    k.preventDefault();
+    const exec = keyOptions(key);
+    exec();
+  });
+
+
+  video.addEventListener('timeupdate' , ()=> {
+    const { duration, currentTime } = video;
+    const salt = document.querySelector('.salt');
+    if(currentTime <= 103){
+      salt.innerText = 'Pular abertura';
+      salt.style.display = 'block';
+      salt.onclick = ()=> skipOpening();
+    }else if(duration - currentTime <= 127){
+      salt.innerText = 'Próximo episódio';
+      salt.style.display = 'block';
+      salt.onclick = ()=> nextEpisode();
+    }else {
+      salt.style.display = 'none';
+    }  
+  });
+
+  function getTime(){
+    return video.currentTime;
+  }
+
+  function dataSave(index){
+    localStorage.setItem(`current-time-${getName()}`, getTime());
+    localStorage.setItem('current-name', getName());
+    localStorage.setItem('index', index);
+    localStorage.setItem(`current-percentage-view-${getName()}`, `${getPercentage(video.duration, video.currentTime)}%`);
+  }
+
+  function updateProgress(){
+    const progresses = document.querySelectorAll('.progressValue');
+    const index = localStorage.getItem('index');
+    const percentage = getPercentageSelectedVideo();
+    progresses[index].style.width = percentage;
+    dataSave(index);
+  }
+
+  window.onbeforeunload = function(){
+    dataSave(localStorage.getItem('index') || 0);
+    updateProgress();
+  };
+
+  window.addEventListener('keydown', (k)=> {
+    if(k.code === 'Space'){
+      k.preventDefault();
+      video.paused ? video.play() : video.pause();
+    }
+    const { key } = k;
+    const exec = keyOptions(key);
+    exec();
+  });
+
+  video.onloadedmetadata = ()=> {
+    const name = getName();
+    const currentName = localStorage.getItem('current-name');
+    if(currentName && (localStorage.getItem(`current-time-${getName()}`) && currentName === name)){
+      const savedTime = localStorage.getItem(`current-time-${getName()}`);
+      video.currentTime = savedTime;
+    }
+  }
+
+
+</script>
+</html>

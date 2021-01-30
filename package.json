@@ -1,0 +1,14 @@
+{
+  "name": "mediaplayer",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "electron": "^11.2.1",
+    "electron-reload": "^1.5.0"
+  }
+}
