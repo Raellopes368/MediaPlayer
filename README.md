@@ -12,7 +12,8 @@ Para instalar siga esses passos
 
 * **Clone do repositório no github** 
 
-```git clone ```
+```git clone https://github.com/Raellopes368/MediaPlayer.git``` com https ou 
+```git clone git@github.com:Raellopes368/MediaPlayer.git``` com SSH
 
 * **Instalação das dependências**
 
