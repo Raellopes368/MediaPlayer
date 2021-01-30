@@ -38,7 +38,7 @@ Crie um arquivo na raiz do projeto chamado .env e insira essa variável passando
 * **Execução do projeto**
 
 Para executar o projeto, execute o comando:
-````npm rum start``` ou
+```npm rum start``` ou
 ```yarn start```
 
 
